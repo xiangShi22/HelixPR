@@ -166,9 +166,9 @@ def extract_features(model, dataloader, device):
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    X_train_full, y_train_full, label_encoder, pad_length = load_all_data("/data/train")
+    X_train_full, y_train_full, label_encoder, pad_length = load_all_data("/data/train/mfpe")
     X_train, y_train = X_train_full, y_train_full
-    X_test, y_test, _, _ = load_all_data("/data/test")
+    X_test, y_test, _, _ = load_all_data("/data/test/mfpe")
 
     X_train, X_test = normalize_train_val_test(X_train, X_test)
 
