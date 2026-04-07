@@ -1,109 +1,135 @@
+import argparse
+import math
 import os
 import pandas as pd
-from time import time
 from Bio import SeqIO
-import math
 
-def positional_encode(sequence, alpha=0.05):
 
-    mapping = {'A':0, 'C':1, 'G':2, 'T':3}
-    encoded_matrix = []
+NUCLEOTIDE_TO_INDEX = {"A": 0, "C": 1, "G": 2, "T": 3}
+CSV_COLUMNS = ["A", "C", "G", "T"]
 
+
+def positional_encode(sequence: str, alpha: float = 0.05, period: float = 10.0):
     length = len(sequence)
-    count_A = sequence.count('A')
-    count_C = sequence.count('C')
-    count_G = sequence.count('G')
-    count_T = sequence.count('T')
+    if length == 0:
+        return []
 
     cls_token = [
-        count_A / length,
-        count_C / length,
-        count_G / length,
-        count_T / length
+        sequence.count("A") / length,
+        sequence.count("C") / length,
+        sequence.count("G") / length,
+        sequence.count("T") / length,
     ]
 
-    encoded_matrix.append(cls_token)
-    
-    for k_1based, nt in enumerate(sequence, 1):
-        if nt not in mapping:
+    encoded_matrix = [cls_token]
+
+    for position, nucleotide in enumerate(sequence, start=1):
+        if nucleotide not in NUCLEOTIDE_TO_INDEX:
             continue
 
-        vec = [0.0] * 4
-        vec[mapping[nt]] = 1.0
+        one_hot = [0.0, 0.0, 0.0, 0.0]
+        one_hot[NUCLEOTIDE_TO_INDEX[nucleotide]] = 1.0
 
-        angle = 2 * math.pi * k_1based / 10.0
+        angle = 2 * math.pi * position / period
         sin_val = math.sin(angle)
         cos_val = math.cos(angle)
-
         pos_enc = [sin_val, cos_val, -sin_val, cos_val]
 
-        fused = [v + alpha*p for v,p in zip(vec, pos_enc)]
-        encoded_matrix.append(fused)
+        encoded_matrix.append(
+            [value + alpha * offset for value, offset in zip(one_hot, pos_enc)]
+        )
 
     return encoded_matrix
 
 
-def process_file(input_file, output_base_dir):
-  
+def sanitize_filename(name: str) -> str:
+    sanitized = "".join(c for c in name if c.isalnum() or c in {"_", "-"}).rstrip()
+    return sanitized or "sequence"
+
+
+def process_fasta_file(input_file: str, output_base_dir: str, alpha: float, period: float):
     file_name = os.path.splitext(os.path.basename(input_file))[0]
-    
-    output_folder = os.path.join(output_base_dir, file_name)
-    
-    os.makedirs(output_folder, exist_ok=True)
-    
-    sequences = []
-    
+    output_dir = os.path.join(output_base_dir, file_name)
+    os.makedirs(output_dir, exist_ok=True)
+
+    processed_count = 0
+    total_count = 0
+
     for record in SeqIO.parse(input_file, "fasta"):
-        seq = str(record.seq).upper()
+        total_count += 1
+        name = record.id
+        sequence = str(record.seq).upper()
 
-    columns = ['A', 'C', 'G', 'T']
-    
-    count = 0
-    for name, seq in sequences:
-        encoded = positional_encode(seq)
-        if encoded:
-            df = pd.DataFrame(encoded, columns=columns)
-            safe_name = "".join(c for c in name if c.isalnum() or c in ('_', '-')).rstrip()
-            output_file = os.path.join(output_folder, f"{safe_name}.csv")
-            df.to_csv(output_file, index=False)
-            count += 1
-    
-    return count, len(sequences)
+        encoded = positional_encode(sequence, alpha=alpha, period=period)
+        if not encoded:
+            continue
+
+        output_file = os.path.join(output_dir, f"{sanitize_filename(name)}.csv")
+        pd.DataFrame(encoded, columns=CSV_COLUMNS).to_csv(output_file, index=False)
+        processed_count += 1
+
+    return processed_count, total_count
 
 
-def process_all_txt_files(input_folder, output_base_dir):
-    start_time = time()
-    
-    os.makedirs(output_base_dir, exist_ok=True)
-    
-    txt_files = [f for f in os.listdir(input_folder) if f.endswith('.txt')]
-    
-    if not txt_files:
-        print("not found")
+def process_all_files(input_dir: str, output_dir: str, alpha: float, period: float):
+    os.makedirs(output_dir, exist_ok=True)
+
+    fasta_files = sorted(
+        file_name for file_name in os.listdir(input_dir) if file_name.endswith(".txt")
+    )
+
+    if not fasta_files:
+        print(f"No .txt files found in {input_dir}")
         return
 
-    for i, txt_file in enumerate(txt_files, 1):
-        input_file_path = os.path.join(input_folder, txt_file)
-        
-        seq_processed, seq_found = process_file(
-            input_file_path, output_base_dir
-        )
-            
-    end_time = time()
-    
+    print(f"Found {len(fasta_files)} files")
+
+    total_processed = 0
+    total_sequences = 0
+
+    for index, file_name in enumerate(fasta_files, start=1):
+        input_path = os.path.join(input_dir, file_name)
+        print(f"[{index}/{len(fasta_files)}] Processing {file_name}")
+
+        try:
+            processed_count, total_count = process_fasta_file(
+                input_path,
+                output_dir,
+                alpha=alpha,
+                period=period,
+            )
+            total_processed += processed_count
+            total_sequences += total_count
+            print(f"  sequences: {processed_count}/{total_count}")
+        except Exception as error:
+            print(f"  failed: {error}")
+
+    print(f"Files processed: {len(fasta_files)}")
+    print(f"Sequences processed: {total_processed}/{total_sequences}")
+
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--input_dir", required=True)
+    parser.add_argument("--output_dir", required=True)
+    parser.add_argument("--alpha", type=float, default=0.05)
+    parser.add_argument("--period", type=float, default=10.0)
+    return parser.parse_args()
+
 
 def main():
-    # 配置路径
-    input_folder = "/data/test"  # 包含所有txt文件的文件夹
-    output_base_dir = "/data/test/mfpe"  # 输出基础目录
-    
-    if not os.path.exists(input_folder):
-        print(f"error: {input_folder}")
-        return
-    
-    process_all_txt_files(input_folder, output_base_dir)
-    
+    args = parse_args()
 
+    if not os.path.isdir(args.input_dir):
+        raise FileNotFoundError(f"Input directory does not exist: {args.input_dir}")
+
+    process_all_files(
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        alpha=args.alpha,
+        period=args.period,
+    )
 
 
 if __name__ == "__main__":
