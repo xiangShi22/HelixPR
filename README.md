@@ -1,4 +1,4 @@
-# MFPE: a multi-perspective Fourier positional encoding based on DNA helical periodicity for identifying enhancers
+# MFPE: a multi-perspective Fourier positional encoding for identifying enhancers
 
 This repository provides a simple two-stage pipeline for DNA sequence classification:
 
