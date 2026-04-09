@@ -8,7 +8,7 @@ This repository provides a simple two-stage pipeline for DNA sequence classifica
 The code is organized into two scripts:
 
 - `mfpe.py`: convert FASTA sequences into MFPE-based CSV embeddings
-- `cnn.py`: load the generated embeddings and train a CNN classifier
+- `train.py`: load the generated embeddings and train a CNN classifier
 
 ---
 
@@ -30,8 +30,8 @@ Recommended directory layout:
 
 ```text
 project/
-├── open_source_cleaned_code.py
-├── open_source_cleaned_train.py
+├── mfpe.py
+├── train.py
 ├── data/
 │   ├── raw/
 │   │   ├── train/
@@ -68,16 +68,16 @@ pip install numpy pandas torch biopython scikit-learn tqdm
 
 ## Step 1: Generate Embeddings
 
-Use `open_source_cleaned_code.py` to convert FASTA sequences into CSV embeddings.
+Use `mfpe.py` to convert FASTA sequences into CSV embeddings.
 
 ### Input format
 
-The input directory should contain FASTA `.txt` files. Each file may contain multiple sequences.
+The input directory should contain `.txt` files. Each file may contain multiple sequences.
 
 ### Example
 
 ```bash
-python open_source_cleaned_code.py \
+python mfpe.py \
   --input_dir /path/to/raw/train \
   --output_dir /path/to/processed/train \
   --alpha 0.05 \
@@ -87,7 +87,7 @@ python open_source_cleaned_code.py \
 Run the same process for the test set:
 
 ```bash
-python open_source_cleaned_code.py \
+python train.py \
   --input_dir /path/to/raw/test \
   --output_dir /path/to/processed/test \
   --alpha 0.05 \
@@ -98,30 +98,17 @@ python open_source_cleaned_code.py \
 
 For each input `.txt` file, the script creates a folder with the same name and saves one CSV file per sequence.
 
-Each CSV has 4 columns:
-
-- `A`
-- `C`
-- `G`
-- `T`
-
-Each row corresponds to either:
-
-- the prepended CLS-style token, or
-- an encoded nucleotide position
-
----
 
 ## Step 2: Train the CNN
 
-Use `open_source_cleaned_train.py` to train and evaluate the classifier.
+Use `train.py` to train and evaluate the classifier.
 
 
 
 ### Example
 
 ```bash
-python open_source_cleaned_train.py \
+python train.py \
   --train_dir /path/to/processed/train \
   --test_dir /path/to/processed/test \
   --batch_size 64 \
@@ -142,7 +129,7 @@ python open_source_cleaned_train.py \
 - `--alpha`: scaling factor for positional encoding
 - `--period`: positional encoding period
 
-### `cnn.py`
+### `train.py`
 
 - `--train_dir`: directory containing training CSV embeddings
 - `--test_dir`: directory containing test CSV embeddings
@@ -156,7 +143,6 @@ python open_source_cleaned_train.py \
 
 ## Notes
 
-- Sequences containing `N` are skipped during preprocessing.
 - Sequence embeddings are padded to the maximum length found in the dataset.
 - Normalization statistics are computed from the training set and applied to both training and test data.
 - The current training script is designed for standard classification experiments and saves the final model weights to `best.pth`.
@@ -165,20 +151,19 @@ python open_source_cleaned_train.py \
 
 ## Example Workflow
 
-```bash
-python open_source_cleaned_code.py \
+python mfpe.py \
   --input_dir ./data/raw/train \
   --output_dir ./data/processed/train \
   --alpha 0.05 \
   --period 10
 
-python open_source_cleaned_code.py \
+python mfpe.py \
   --input_dir ./data/raw/test \
   --output_dir ./data/processed/test \
   --alpha 0.05 \
   --period 10
 
-python open_source_cleaned_train.py \
+python train.py \
   --train_dir ./data/processed/train \
   --test_dir ./data/processed/test \
   --batch_size 64 \
@@ -186,7 +171,7 @@ python open_source_cleaned_train.py \
   --lr 1e-4 \
   --seed 42 \
   --save_path best.pth
-```
+
 
 ---
 
