@@ -68,7 +68,7 @@ pip install numpy pandas torch biopython scikit-learn tqdm
 
 ## Step 1: Generate Embeddings
 
-Use `mfpe.py` to convert FASTA sequences into CSV embeddings.
+Use `mfpe.py` to convert DNA sequences into MFPE embeddings.
 
 ### Input format
 
