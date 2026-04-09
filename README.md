@@ -87,7 +87,7 @@ python mfpe.py \
 Run the same process for the test set:
 
 ```bash
-python train.py \
+python mfpe.py \
   --input_dir /path/to/raw/test \
   --output_dir /path/to/processed/test \
   --alpha 0.05 \
@@ -139,39 +139,6 @@ python train.py \
 - `--seed`: random seed
 - `--save_path`: path to save the trained model
 
----
-
-## Notes
-
-- Sequence embeddings are padded to the maximum length found in the dataset.
-- Normalization statistics are computed from the training set and applied to both training and test data.
-- The current training script is designed for standard classification experiments and saves the final model weights to `best.pth`.
-
----
-
-## Example Workflow
-
-python mfpe.py \
-  --input_dir ./data/raw/train \
-  --output_dir ./data/processed/train \
-  --alpha 0.05 \
-  --period 10
-
-python mfpe.py \
-  --input_dir ./data/raw/test \
-  --output_dir ./data/processed/test \
-  --alpha 0.05 \
-  --period 10
-
-python train.py \
-  --train_dir ./data/processed/train \
-  --test_dir ./data/processed/test \
-  --batch_size 64 \
-  --epochs 40 \
-  --lr 1e-4 \
-  --seed 42 \
-  --save_path best.pth
 
 
----
 
