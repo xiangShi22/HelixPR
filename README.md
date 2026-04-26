@@ -7,7 +7,7 @@ This repository provides a simple two-stage pipeline for DNA sequence classifica
 
 The code is organized into two scripts:
 
-- `mfpe.py`: convert FASTA sequences into MFPE-based CSV embeddings
+- `helixPR.py`: convert FASTA sequences into MFPE-based CSV embeddings
 - `train.py`: load the generated embeddings and train a CNN classifier
 
 ---
