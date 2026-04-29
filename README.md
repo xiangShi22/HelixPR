@@ -68,7 +68,7 @@ pip install numpy pandas torch biopython scikit-learn tqdm
 
 ## Step 1: Generate Embeddings
 
-Use `helixPR.py` to convert DNA sequences into helixPR embeddings.
+Use `helixPR.py` to convert DNA sequences into HelixPR embeddings.
 
 ### Input format
 
