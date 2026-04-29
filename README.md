@@ -2,7 +2,7 @@
 
 This repository provides a simple two-stage pipeline for DNA sequence classification:
 
-1. **Preprocess FASTA files into MFPE embeddings**
+1. **Preprocess FASTA files into HelixPR embeddings**
 2. **Train a CNN classifier on the generated embeddings**
 
 The code is organized into two scripts:
